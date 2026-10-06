@@ -1,14 +1,14 @@
 {
-  "name": "vibe-wise",
-  "owner": { "name": "Noah Kim" },
+  "name": "vibe-wise-science",
+  "owner": { "name": "Jakob Winkler" },
   "metadata": {
-    "description": "VibeWise: learn how to build while AI writes the code."
+    "description": "VibeWise Science: learn scientific methods while AI writes the code. Based on VibeWise by Noah Kim."
   },
   "plugins": [
     {
-      "name": "vibe-wise",
+      "name": "vibe-wise-science",
       "source": "./",
-      "description": "Learn how to build software while Claude writes the code."
+      "description": "Learn methods, assumptions, and caveats for psychology, NeuroAI, and ML code while Claude writes it. Based on VibeWise by Noah Kim."
     }
   ]
 }

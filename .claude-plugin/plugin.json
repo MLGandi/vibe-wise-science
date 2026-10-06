@@ -1,9 +1,9 @@
 {
-  "name": "vibe-wise",
-  "version": "0.1.43",
-  "description": "You build. AI writes. Learn how to build software while Claude writes the code.",
-  "author": { "name": "Noah Kim" },
-  "repository": "https://github.com/nykooi1/vibe-wise",
+  "name": "vibe-wise-science",
+  "version": "0.1.0",
+  "description": "Learn scientific methods while Claude writes the code: psychology, NeuroAI, and machine learning. Based on VibeWise by Noah Kim.",
+  "author": { "name": "Jakob Winkler" },
+  "repository": "https://github.com/MLGandi/vibe-wise-science",
   "license": "MIT",
-  "keywords": ["learning", "architecture", "engineering"]
+  "keywords": ["learning", "science", "statistics", "psychology", "neuroscience", "machine-learning"]
 }

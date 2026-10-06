@@ -1,24 +1,26 @@
 ---
 name: learn
-description: Activate or resume learning-first development. You lead the design; Claude gives feedback, explains concepts, asks follow-ups, and writes the agreed code.
+description: Activate or resume learning-first science coding. You lead the analysis; Claude explains methods, their assumptions, alternatives, and caveats, asks follow-ups, and writes the agreed code.
 disable-model-invocation: true
 ---
 
-# VibeWise Learn mode
+# VibeWise Science Learn mode
 
 Activate learning mode in the main conversation. Read [behavior.md](behavior.md)
 and follow it throughout normal development, not just during this command.
-The learner owns the design. Ask for their approach and wait. Keep guidance minimal:
-give concise feedback on their reasoning and explain unfamiliar concepts as needed.
-Offer possible approaches only when they ask for help or are stuck, then return
-the decisions to them. Learning and learner control take priority over build speed.
+The learner owns the scientific decisions. Ask for their reasoning and wait. Keep
+steering minimal: give concise feedback on their reasoning, and explain methods with
+their assumptions, alternatives, and caveats. Recommend one only when they ask for
+help or are stuck, then return the decision to them. Keep code explanations brief
+unless the profile asks for more or the code can change results. Learning and
+learner control take priority over build speed.
 An ordinary build request in this mode retains that loop;
 only an explicit request to skip or pause bypasses it.
 Do not switch to a subagent or require manual coding by default.
 
 Use the Read tool for plugin guides instead of printing them with Bash `cat`.
 Use Glob to discover optional learner-state files before reading them. A missing
-`.vibe-wise/` directory is normal first-time setup, not an error. If a shell
+`.vibe-wise-science/` directory is normal first-time setup, not an error. If a shell
 check is necessary, handle absence with an explicit conditional that succeeds;
 don't run `ls` on a possibly missing directory or hide actual read failures.
 Keep guide reads separate from optional state checks so a missing file doesn't
@@ -26,13 +28,13 @@ make a successful instruction read look like a failed tool call.
 
 ## Locate state
 
-Starting at the current working directory, look upward for `.vibe-wise/` or legacy
-`.sensible-vibes/`, preferring `.vibe-wise/` when both exist at the same level,
+Starting at the current working directory, look upward for `.vibe-wise-science/`,
 stopping at the nearest `.git` directory or file (including a worktree root).
-Use the nearest existing state directory within that boundary. Keep using legacy
-notes in place; never merge, move, or reset them automatically. If there is none,
-create `.vibe-wise/` at the Git root, or current directory without Git. Do not use
-state from a parent repository, another worktree, or the installed plugin folder.
+Use the nearest existing state directory within that boundary. If there is none,
+create `.vibe-wise-science/` at the Git root, or current directory without Git.
+Do not use state from a parent repository, another worktree, or the installed
+plugin folder. Never read, move, or reset `.vibe-wise/` or `.sensible-vibes/`
+notes: they belong to the original VibeWise plugin and use a different format.
 Do not follow symlinked state directories or files; explain the issue instead.
 
 If `profile.md` exists, read it and `project-map.md`. Search the entire `progress.md`
@@ -48,5 +50,5 @@ If no profile exists, read [onboarding.md](onboarding.md) and run onboarding.
 Use [state-templates.md](state-templates.md) when creating state. These files are
 local Markdown maintained with normal file tools; there is no service to call.
 
-After setup, continue the user's build task. If none was provided, ask what they
-want to build or change. Invoking this skill again should not reset anything.
+After setup, continue the user's task. If none was provided, ask what they want
+to investigate, build, or change. Invoking this skill again should not reset anything.

@@ -14,6 +14,9 @@ import sys
 
 # Find the installed plugin from this script, not from the user's project folder.
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
+# The original VibeWise plugin's .vibe-wise/ notes use a different format; this
+# plugin never reads them, so both can be installed side by side.
+STATE_NAME = ".vibe-wise-science"
 
 
 def profile_is_active(path):
@@ -41,13 +44,11 @@ def state_directory(cwd):
     """Find the nearest notes directory without crossing a Git project boundary."""
     # Starting in a source subdirectory should still find the project's notes.
     for directory in (cwd, *cwd.parents):
-        # Prefer the new name at the nearest location; keep legacy notes in place.
-        for name in (".vibe-wise", ".sensible-vibes"):
-            state = directory / name
-            if state.exists() or state.is_symlink():
-                # Stop even if this candidate is invalid. Falling back to a parent
-                # could silently load a different project's learner profile.
-                return state if state.is_dir() and not state.is_symlink() else None
+        state = directory / STATE_NAME
+        if state.exists() or state.is_symlink():
+            # Stop even if this candidate is invalid. Falling back to a parent
+            # could silently load a different project's learner profile.
+            return state if state.is_dir() and not state.is_symlink() else None
         # A .git file is a worktree boundary too. Never borrow another repo's state.
         if (directory / ".git").exists():
             break
@@ -77,7 +78,7 @@ def restore(payload):
     # Bootstrap from source files instead of emitting partial notes or an incomplete
     # topic index. Output size is independent of the amount of learning history.
     context = (
-        "VibeWise is active for this project. Before responding or coding, use Read "
+        "VibeWise Science is active for this project. Before responding or coding, use Read "
         "to load the Learn guide and its referenced behavior instructions:\n"
         f"{PLUGIN_ROOT / 'skills/learn/SKILL.md'}\n\n"
         f"State directory: {state}\n"

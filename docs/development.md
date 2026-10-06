@@ -1,8 +1,18 @@
 # Development
 
-V1 uses Claude Code skills, Markdown instructions, one read-only Python hook,
-and a small Python helper for confirmed learning resets.
-There are no packages to install. Python 3.8+ is sufficient for the hook and tests.
+VibeWise Science is maintained by Jakob Winkler as a fork of
+[VibeWise](https://github.com/nykooi1/vibe-wise) 0.1.43 by Noah Kim, whose idea
+and code it builds on. It uses Claude Code skills, Markdown
+instructions, one read-only Python hook, and a small Python helper for confirmed
+learning resets. There are no packages to install. Python 3.8+ is sufficient for
+the hook and tests.
+
+The science-specific behavior lives entirely in Markdown: `skills/learn/behavior.md`
+(Method and Interpretation checkpoints, Assumptions and Caveats callouts, brief code
+explanations, validation in reports, participant-data handling), `onboarding.md`
+(field, methods background, code explanation preference, reproducing a paper), and
+`state-templates.md` (science project map). The Python changed only to use the
+`.vibe-wise-science/` notes directory.
 
 ## Local checks
 
@@ -19,9 +29,15 @@ projects. They cover activation, restoration, partial onboarding, paused mode,
 subdirectories, repository/worktree boundaries, missing/invalid files, symlinks,
 constant-size restoration instructions as notes grow, and read-only behavior.
 They do not prove that Claude follows the instructions or teaches well.
-Rename coverage verifies that `.sensible-vibes/` notes restore without migration,
-`.vibe-wise/` takes precedence at the same location, and legacy lookup preserves
-repository boundaries, nearest-state selection, and symlink rejection.
+Isolation coverage verifies that the original plugin's `.vibe-wise/` and
+`.sensible-vibes/` notes are never read or reset, whether alone, alongside
+`.vibe-wise-science/`, or in a subdirectory.
+
+The hook command is POSIX shell (`"shell": "bash"` in `hooks.json`) and tries
+`python3`, then `python`. On Windows, `subprocess` runs the hook tests through
+`cmd.exe`, which cannot run that command, so run them from a POSIX shell or route
+`shell=True` commands through Git Bash. Symlink tests also need Windows Developer
+Mode or an elevated shell; without it they error with WinError 1314.
 Reset tests cover read-only preview, confirmed backup/reset, stale confirmation,
 legacy and partial notes, nested projects, repeated backups, rejected symlinks,
 backup/write failures, and restoring incomplete onboarding after reset.
@@ -29,12 +45,55 @@ backup/write failures, and restoring incomplete onboarding after reset.
 ## Conversation smoke tests
 
 Use an authenticated Claude Code session and temporary copies of projects.
-Launch with `claude --plugin-dir /absolute/path/to/vibe-wise`.
+Launch with `claude --plugin-dir /absolute/path/to/vibe_wise_science`.
 
-For a manual walkthrough based on the playground notes app, see the
-[Notion-style demo](demos/notion-dupe.md).
+For a manual NeuroAI walkthrough, see the [encoding-model demo](demos/encoding-model.md).
 
-1. **Fresh project:** Run `/vibe-wise:learn`. Choose a new project, describe
+### Science checks
+
+These cover behavior added in VibeWise Science. Vary the field across runs
+(psychology, NeuroAI, ML) to avoid overfitting to one example.
+
+- **S1 Problem before method:** Ask for an analysis, such as comparing two conditions.
+  Before any method appears, Claude asks one focused question about the data's
+  structure (unit of observation, dependencies, sample size) and waits.
+- **S2 Method landscape:** Say you don't know which methods exist. Claude shows a
+  Method checkpoint table of 2–4 candidates with Method / When it fits / Key
+  assumptions / Caveats, including the field's standard choice and a real
+  alternative, without ranking them, and asks you to choose and justify in chat,
+  not in a picker. Asking “recommend one” should get a recommendation.
+- **S3 Proposed method:** Propose a method whose assumption the data violate (for
+  example an independent-samples t-test on repeated measures). Claude names the
+  violated assumption directly, gives alternatives and caveats, and doesn't invent
+  your rationale. A sound proposal still gets its assumptions and main alternatives.
+- **S4 Code brevity:** With default preferences, implementation reports explain code
+  briefly. File layout and plotting appear only as proposed additions. A choice
+  that can change results (random versus grouped split, tuning on the test set,
+  Student's versus Welch's t-test default, averaging before testing) gets a
+  reasoning checkpoint. Asking about code gets a full explanation.
+- **S5 Validation:** After implementation, the report separates code tests from
+  analysis validation (simulated-data recovery, permutation baseline, noise
+  ceiling, leakage checks), reports only what actually ran, and doesn't present
+  numbers as findings before interpretation.
+- **S6 Interpretation:** Once results exist, Claude asks what they show and don't
+  show before giving its reading. Overclaim (significance as effect size, null as
+  evidence of absence, prediction as mechanism); Claude names the gap factually.
+- **S7 Participant data:** In an existing repository with a CSV of participant
+  data, Claude inspects columns, shapes, and summaries rather than printing
+  records, and the notes contain no participant-level values.
+- **S8 Reproduce a paper:** Choose Reproduce a paper. Claude asks you to identify
+  the claim, data, and analysis steps before summarizing the paper, and records
+  unspecified details as unknowns.
+- **S9 Isolation:** In a project that already has original VibeWise `.vibe-wise/`
+  notes, `/vibe-wise-science:learn` creates `.vibe-wise-science/`, runs fresh
+  onboarding, and leaves `.vibe-wise/` unchanged.
+
+### Inherited VibeWise checks
+
+These come from VibeWise and test the reasoning-first loop itself. Their
+software examples still exercise it; analysis examples work too.
+
+1. **Fresh project:** Run `/vibe-wise-science:learn`. Choose a new project, describe
    a small CLI, and accept preference defaults. Check that all three state files
    are created, the map separates proposed from implemented components, and no
    understanding is marked demonstrated without evidence. Choice questions must
@@ -129,11 +188,12 @@ For a manual walkthrough based on the playground notes app, see the
     unresolved issue. No code should be written before implementation approval.
 
 13. **Reset:** In a temporary project with saved learning notes, invoke
-    `/vibe-wise:reset`. Confirm it shows the absolute project and state paths and
+    `/vibe-wise-science:reset`. Confirm it shows the absolute project and state paths and
     asks Cancel / Reset learning. Cancel must leave all files unchanged. Invoke
     again and confirm: original notes must exist in the reported backup, the
     active profile must be incomplete, and onboarding must ask fresh questions
-    rather than reuse old preferences. Repeat with legacy notes and after restart.
+    rather than reuse old preferences. Repeat after restart, and confirm original
+    VibeWise `.vibe-wise/` notes in the same project are left untouched.
     If notes change during confirmation, Claude must preview and confirm again.
 
 14. **Requirements versus design:** Give a product requirement without proposing
@@ -171,7 +231,7 @@ For a manual walkthrough based on the playground notes app, see the
     inspect the notes: unmentioned fields, lifecycle behavior, alternatives, and
     rationale must remain unresolved, not appear as agreed design or learner reasoning.
 
-Do not commit `.vibe-wise/` or test transcripts. The plugin recommends an
+Do not commit `.vibe-wise-science/` or test transcripts. The plugin recommends an
 ignore rule during onboarding, but changes `.gitignore` only after telling the
 user and receiving their instruction to make the edit.
 
@@ -182,7 +242,7 @@ Verified against current first-party documentation on 2026-09-28:
 - [Plugin creation](https://code.claude.com/docs/en/plugins/create): standard
   component directories and `--plugin-dir` for local loading.
 - [Skills](https://code.claude.com/docs/en/skills): the command is
-  `/vibe-wise:learn`. Explicit invocation starts onboarding; the hook restores
+  `/vibe-wise-science:learn`. Explicit invocation starts onboarding; the hook restores
   behavior in later sessions only where a learner profile already exists.
 - [Hooks](https://code.claude.com/docs/en/hooks): `SessionStart` sources include
   `startup`, `resume`, `clear`, `compact`, and `fork`. The hook emits a small
@@ -210,7 +270,26 @@ Keep V1 local and terminal-native. No backend, analytics, accounts, separate LLM
 calls, scoring engine, or custom UI. Saved context is processed by Claude Code
 under the user's existing data settings.
 
-## V1 verification
+## VibeWise Science 0.1.0 verification
+
+Checked on 2026-10-06 on Windows 11 with Claude Code 2.1.286 and Python 3.13:
+
+- Plugin, marketplace, and skill validation passed.
+- With hook commands routed through Git Bash, 30 of 35 tests passed. The other 5
+  are symlink tests that need Developer Mode on Windows (WinError 1314); they were
+  not run successfully and remain unverified on this machine.
+- With the real PATH, where `python3` is the Microsoft Store alias, the hook fell
+  back to `python`, exited 0 with empty stderr, and restored context. A project
+  with only `.vibe-wise/` notes produced no context.
+- A live print-mode session loaded the plugin as `vibe-wise-science`, ran the
+  SessionStart hook with `"shell": "bash"`, and the model then read the Learn guide
+  and globbed `.vibe-wise-science/`. No teaching conversation was run; the science
+  checks above have not been exercised live yet.
+
+## Upstream verification history (VibeWise)
+
+The entries below were recorded by VibeWise before the fork and refer to its
+version numbers, `.vibe-wise/` notes, and software-design behavior.
 
 Tested on 2026-09-28 with Claude Code 2.1.240:
 

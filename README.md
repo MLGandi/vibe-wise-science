@@ -1,230 +1,253 @@
 <img src=".claude-plugin/icon.svg" alt="VibeWise brain with code brackets" width="96" height="96">
 
-# VibeWise
+# VibeWise Science
 
-**You build. AI writes.**
+**You do the science. AI writes the code.**
 
-A Claude Code plugin that puts learning first and keeps you in control while AI writes the code you designed. Claude **asks for your approach first**, helps you examine tradeoffs, and explains unfamiliar concepts. You shape the design and decide when it's ready to implement. Claude writes the code, then explains what it changed and why.
+A Claude Code plugin for learning to write research code in psychology, NeuroAI,
+and machine learning. Before writing code, Claude asks how you'd approach the
+analysis and teaches the methods that fit: when to use each one, what it assumes,
+what the alternatives are, and what can go wrong. You choose. Claude writes the code
+with brief explanations, then reports how the result was checked, and asks you to
+interpret it before giving its own reading.
 
-For anyone who wants to learn as they build—whether you're an aspiring engineer, a junior developer, or an experienced engineer exploring an unfamiliar stack. Practice planning how the pieces fit together, anticipating failures, and checking the result while keeping ownership of the decisions.
+> **Credit:** The basic idea and the original code come from
+> [VibeWise](https://github.com/nykooi1/vibe-wise) by Noah Kim. VibeWise Science
+> is a fork maintained by Jakob Winkler. It keeps VibeWise's reasoning-first loop,
+> hook, and reset helper, and shifts the teaching from software design to
+> scientific methods.
+
+## What's different from VibeWise
+
+| | VibeWise | VibeWise Science |
+| --- | --- | --- |
+| Focus | Software design: components, data, stack | Methods: assumptions, alternatives, caveats, validation |
+| Choosing an approach | You propose; options only when you ask | You reason about the data; Claude lays out candidate methods; you choose and justify |
+| Code explanations | Full | Brief by default, except code that can change results |
+| After results | Implementation report | Report that separates code tests from analysis validation, then an Interpretation checkpoint |
+| Notes folder | `.vibe-wise/` | `.vibe-wise-science/` (the two plugins never share notes) |
 
 ## Get started
 
 You need [Claude Code](https://code.claude.com/docs/en/setup) and
-[Python 3](https://www.python.org/downloads/). VibeWise uses Python to restore
-learning context and reset learning notes. No extra Python packages are needed.
-
-VibeWise has been approved for Anthropic's Claude directory, but isn't listed in
-the public community marketplace yet. I expect it to appear soon. In the meantime,
-install it in Claude Code through my GitHub marketplace:
+[Python 3](https://www.python.org/downloads/). No extra Python packages are needed.
+On Windows, Claude Code runs the plugin's hook in Git Bash; if `python3` is only the
+Microsoft Store alias, the hook falls back to `python`.
 
 Run these commands **one at a time** in Claude Code. First, add the marketplace:
 
 ```text
-/plugin marketplace add nykooi1/vibe-wise
+/plugin marketplace add MLGandi/vibe-wise-science
 ```
 
 After it finishes, install the plugin:
 
 ```text
-/plugin install vibe-wise@vibe-wise
+/plugin install vibe-wise-science@vibe-wise-science
 ```
 
-**Enable automatic updates:** open `/plugin` → **Marketplaces** → **vibe-wise** →
-**Enable auto-update**. This is off by default for third-party marketplaces.
+**Enable automatic updates:** open `/plugin` → **Marketplaces** →
+**vibe-wise-science** → **Enable auto-update**. This is off by default for
+third-party marketplaces.
+
+To work on the plugin itself, clone the repository and either add the local folder
+as the marketplace (`/plugin marketplace add C:/path/to/vibe-wise-science`) or start
+Claude Code with `claude --plugin-dir C:/path/to/vibe-wise-science`.
 
 Restart Claude Code in the project you want to work on, then run:
 
 ```text
-/vibe-wise:learn
+/vibe-wise-science:learn
 ```
 
-Setup asks one question at a time. Use the arrow keys and Enter for choices; pick **Use defaults** to skip preference setup. Then ask Claude to build something. Starting fresh or joining an unfamiliar repository both work. For an existing repository, Claude first inspects the code and sketches a small system map.
+Setup asks one question at a time: what you're doing (new project, existing repo,
+known project, or reproducing a paper), your field, your methods background, your
+programming experience, and your preferences. Pick **Use defaults** to skip
+preference setup.
 
 ## What it feels like
 
-You're building a Notion-style notes app: users sign in, create and edit private
-notes, and organize them into folders. Here, you're working through how notes and
-folders relate—and what should happen when someone deletes a folder.
-
-This condensed example is adapted from a real learning session. Later implementation
-steps are illustrative; intervening design discussions are omitted.
+You have Stroop data and want to know whether people respond more slowly when the
+word and ink color conflict. This condensed example is illustrative, not a
+transcript; Claude's wording and question order will vary.
 
 **You:**
 
 ```text
-A note can be in several folders. Deleting a folder should delete its notes.
+40 participants, about 100 trials each, half congruent and half incongruent.
+I want to test whether people are slower on incongruent trials.
 ```
 
 **Claude:**
 
-```text
-✦ Build checkpoint: Deleting a shared note
-
-"Trip ideas" is in both Travel and Summer. Deleting it removes it from both.
-
-When someone deletes Travel, what should happen to that note in Summer?
-```
+> **✦ Build checkpoint: Structure of the data**
+>
+> Before picking a test: which observations in this dataset can you treat as
+> independent of each other, and which can't you?
 
 **You:**
 
 ```text
-Keep it in Summer. If it has no folders left, keep the note outside any folder.
+Trials from the same person aren't independent; some people are just slower.
+Different participants are independent.
 ```
 
 **Claude:**
 
-```text
-That separates deleting a folder from deleting a note.
-
-✦ Build checkpoint: Connecting notes and folders
-
-How would you represent which folders a note belongs to, without copying the note?
-```
+> Right: trials are nested in participants, and everyone sees both conditions, so
+> the comparison is within-subject.
+>
+> **✦ Method checkpoint: Comparing conditions within participants**
+>
+> | Method | When it fits | Key assumptions | Caveats |
+> | --- | --- | --- | --- |
+> | Paired t-test on participant means | Balanced within-subject design, one contrast | Differences in condition means roughly normal | Discards trial-level variability; hides unequal trial counts after exclusions |
+> | Wilcoxon signed-rank test | Same design, skewed or outlier-prone differences | Differences symmetric around their center | Tests a different quantity than the mean difference; less power when normality holds |
+> | Linear mixed-effects model on trials | Trial-level data, unequal trial counts, stimulus effects | Roughly normal residuals; sensible random-effects structure | Raw RTs are right-skewed; random slopes can fail to converge |
+>
+> Which would you choose here, and what about your data makes it fit?
 
 **You:**
 
 ```text
-A links table with note_id and folder_id. Deleting a folder removes its links,
-not the notes.
+The mixed model: everyone has a different baseline speed and I want to keep the
+trials. But you said RTs are skewed. Does that break it?
 ```
 
 **Claude:**
 
-```text
-Each link records one membership. Several links can point to the same note;
-a note with no links is unfiled.
-
-notes ← folder links → folders
-
-✦ Design checkpoint: Folder membership
-
-Proposed: store notes once and track folder membership in a links table.
-Deleting a folder removes its links and keeps the notes. This supports multiple
-folders per note; loading a folder's notes needs a lookup through those links.
-
-Confirming records this design. We still need to work through access rules
-and technology choices before writing code.
-
-❯ 1. Confirm and continue
-     This approach makes sense to me; move to the next piece.
-  2. Discuss
-     Ask questions or clarify anything that doesn't make sense before deciding.
-```
+> **✦ Assumptions: Reaction-time distributions**
+>
+> A linear mixed model assumes roughly normal residuals, and raw RTs have a long
+> right tail. Common options are modeling log RT or using a generalized mixed model
+> with a skewed distribution. The choice changes what the effect means: on the log
+> scale it is a ratio ("9% slower") rather than milliseconds.
+>
+> Which scale do you want the effect on, and why?
 
 **You:**
 
 ```text
-Confirm and continue.
+Log RT. Slower people probably also have bigger Stroop effects in milliseconds,
+so a ratio compares people more fairly.
 ```
-
-*Later, after the remaining choices for this step are worked through...*
 
 **Claude:**
 
-```text
-✦ Implementation checkpoint: Folder membership
+> That's an argument about scale, not just a fix for skew: a proportional effect
+> looks the same for fast and slow participants on the log scale.
+>
+> **✦ Design checkpoint: Stroop analysis plan**
+>
+> Proposed: a linear mixed model of log RT with condition as a fixed effect and
+> by-participant random intercepts and slopes for condition. Check residuals, and
+> validate by simulating data with a known effect to confirm the model recovers it.
+> Exclusions and error trials are still open.
+>
+> ```text
+> ❯ 1. Confirm and continue
+>      This approach makes sense to me; move to the next piece.
+>   2. Discuss
+>      Ask questions or clarify anything that doesn't make sense before deciding.
+> ```
 
-I'll add the agreed tables and folder-deletion operation, then test that deleting
-a folder preserves its notes and their membership in other folders.
-This step builds storage behavior; the UI comes later.
-
-❯ 1. Implement this step
-     This approach makes sense to me; write the code for this step.
-  2. Discuss
-     Ask questions or clarify anything that doesn't make sense before deciding.
-```
-
-**You:**
-
-```text
-Implement this step.
-```
-
-*Claude writes the code and runs the tests.*
+*Later, after exclusions are agreed and you choose **Implement this step**...*
 
 **Claude:**
 
-```text
-✦ Implementation report: Folder membership
+> **✦ Implementation report: Stroop mixed model**
+>
+> - `analysis/fit_model.py` fits the agreed model; trials are excluded by the agreed rules before log-transforming.
+> - Code test: on a three-participant fixture, exclusions and the model formula produce the expected rows. Passed.
+> - Analysis validation: on 40 simulated participants with a planted 8% slowdown, the model recovered the effect within its confidence interval. Residual plot saved for review.
+> - Not yet done: fitting the real data and interpreting the estimate.
 
-- Added the schema migration: each membership references one note and one folder.
-- Added folder deletion: removes the folder and its links, preserving note content.
-- Added and ran tests for shared notes and notes left without a folder; both passed.
-```
+> **✦ Interpretation checkpoint: The Stroop effect**
+>
+> The model estimates incongruent trials are about 9% slower. What does this result
+> tell you, and what doesn't it?
 
-You don't need to know the answer already. Claude can explain unfamiliar concepts, sketch the relevant pieces, and help you tackle a smaller question. You stay involved in forming the plan. Answer in plain English; ask for more help or say “skip” whenever you want.
-
-Describing what you want sets the requirements. Build Checkpoints ask you to work
-out how it should function; a feature preference doesn't approve an architecture.
+You don't need to know the answer already. Claude explains unfamiliar methods
+directly, and when you don't know which methods exist, it shows you the landscape
+instead of asking you to guess. Answer in plain English; ask for a recommendation
+or say “skip” whenever you want.
 
 | Checkpoint | What happens |
 | --- | --- |
-| **Build** | You reason through how to approach the problem with Claude. |
-| **Design** | Review the design. **Confirm and continue** records it and continues planning; no code yet. |
+| **Build** | You reason through the question, the measures, and the structure of the data. |
+| **Method** | After you describe the problem, Claude compares candidate methods: when each fits, its assumptions, and its caveats. You choose and justify. |
+| **Design** | Review the analysis plan. **Confirm and continue** records it; no code yet. |
 | **Implementation** | Review the specific code changes. **Implement this step** authorizes Claude to make them. |
+| **Interpretation** | Once results exist, you say what they show and don't show before Claude gives its reading. |
 
-These aren't three mandatory stops. When ready to code, the Implementation
-checkpoint also confirms the design, skipping a separate Design checkpoint.
-Both confirmations offer **Discuss** to ask questions, clarify anything confusing,
-or explore alternatives before deciding.
+These aren't mandatory stops. When ready to code, the Implementation checkpoint also
+confirms the design, skipping a separate Design checkpoint. Both confirmations offer
+**Discuss** to ask questions or explore alternatives before deciding.
 
-When Claude proposes additional implementation details, it separates them from your
-decisions in a short list or table explaining each addition and why it matters.
-You can question or change any item before proceeding.
+Along the way, Claude uses short callouts: **Concept** (what something is),
+**Why this matters** (its consequences here), **Assumptions** (what must hold and
+how to check it), and **Caveats** (pitfalls and common misreadings).
 
-After implementation, Claude briefly explains what changed, how the key code works,
-why it fits your decision, any tests it added or updated and what they cover, and
-which checks ran with their results. Ask to dig deeper anywhere it's unclear.
-
-Small diagrams help you trace data, understand relationships, and see how the system fits together.
+Code stays brief, with one exception: code that can change results is treated as a
+scientific decision and gets a checkpoint. That covers data splits and leakage,
+preprocessing order, seeds, exclusions, convergence settings, hyperparameter search,
+and library defaults that silently change a method.
 
 ## Make it yours
 
-Experience changes the support you get, not your ownership of decisions:
+Methods background and programming experience are set separately, so you can be
+an advanced coder learning statistics, or the reverse:
 
 | Level | Teaching approach |
 | --- | --- |
-| Beginner | Explain unfamiliar pieces, use diagrams, ask smaller reasoning questions. |
-| Intermediate | Less introductory context; explore interactions and tradeoffs. |
-| Advanced | Probe difficult constraints, failure modes, and design assumptions. |
+| Beginner | Explain unfamiliar methods, use diagrams, ask smaller reasoning questions. |
+| Intermediate | Less introductory context; explore how choices interact. |
+| Advanced | Probe assumptions, failure modes, and edge cases. |
 
-Everyone reasons first. Claude adapts to what you demonstrate and how familiar you
-are with the stack. Checkpoint frequency—Light, Normal, or Frequent—is separate.
+Checkpoint frequency (Light, Normal, or Frequent) and code explanations (Brief,
+Standard, or Detailed) are separate settings. You can also just say:
 
+- “Show me the alternatives for this step.”
+- “Recommend a method.”
+- “Explain this code in detail.”
 - “Use fewer checkpoints.”
-- “Focus on backend architecture.”
-- “Use multiple-choice questions.”
 - “Just implement this one.”
-- “Pause learning.” Resume with `/vibe-wise:learn`.
+- “Pause learning.” Resume with `/vibe-wise-science:learn`.
 
-Preferences, learning notes, and a project map live in `.vibe-wise/` in your project. Learning mode resumes in future sessions and after compaction. Add `.vibe-wise/` to your `.gitignore` to keep your notes out of Git; the plugin won't change it silently.
+Preferences, learning notes, and a project map live in `.vibe-wise-science/` in
+your project. The map tracks the research question, data structure, pipeline,
+methods, assumptions, validation, and reproducibility. Learning mode resumes in
+future sessions and after compaction. Add `.vibe-wise-science/` to your `.gitignore`
+to keep your notes out of Git; the plugin won't change it silently.
 
-No extra account, backend, or telemetry. Saved notes are included in Claude's context, so your normal Claude Code data settings still apply.
+Psychology and neuroscience data often describe people. VibeWise Science tells
+Claude to inspect data structure (columns, shapes, counts, summaries) rather than
+participant-level records, and never to copy such data into notes. These are
+instructions to Claude, not technical restrictions: your normal Claude Code
+permissions and data settings still apply. There's no extra account, backend, or telemetry.
 
-To start learning this project from scratch, run `/vibe-wise:reset`. It shows the
-project and asks **Cancel / Reset learning**. After confirmation, it backs up your
-profile, progress, and project map inside the notes directory's `backups/` folder,
-then restarts onboarding. Source code and other projects stay untouched. To change
-your experience level or preferences, just tell Claude; no reset is needed.
+To start learning this project from scratch, run `/vibe-wise-science:reset`. It
+shows the project and asks **Cancel / Reset learning**. After confirmation, it backs
+up your profile, progress, and project map inside the notes directory's `backups/`
+folder, then restarts onboarding. Source code, data, and other projects stay
+untouched. To change your levels or preferences, just tell Claude; no reset is needed.
 
 ## Updating
 
-For automatic updates, open `/plugin` → **Marketplaces** → **vibe-wise** →
-**Enable auto-update**. Auto-update is off by default for third-party marketplaces.
-Claude Code notifies you after an update; restart Claude Code to load the new version.
-
-To update manually, run these in your terminal:
+With auto-update enabled, Claude Code picks up new versions itself. To update
+manually, run these in your terminal:
 
 ```sh
-claude plugin marketplace update vibe-wise
-claude plugin update vibe-wise@vibe-wise
+claude plugin marketplace update vibe-wise-science
+claude plugin update vibe-wise-science@vibe-wise-science
 ```
 
-Then restart Claude Code. Your project learning notes stay intact; no reset is needed.
+Then restart Claude Code. Your project learning notes stay intact.
 Run `claude plugin list` to check the installed version.
-[More about plugin updates](https://code.claude.com/docs/en/discover-plugins#keep-plugins-updated).
 
 ## License
 
-[MIT](LICENSE). You can use, modify, and share this software, including commercially. Keep the license notice with copies. The software comes without a warranty.
+[MIT](LICENSE). The original VibeWise idea and code are copyright Noah Kim; the
+VibeWise Science modifications are copyright Jakob Winkler. You can use, modify,
+and share this software, including commercially. Keep the license notice, with
+both copyright lines, in copies. The software comes without a warranty.
